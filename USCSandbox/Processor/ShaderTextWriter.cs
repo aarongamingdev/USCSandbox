@@ -1,4 +1,4 @@
-﻿using AssetsTools.NET;
+using AssetsTools.NET;
 using System.Globalization;
 using System.Text;
 using USCSandbox.Common;
@@ -199,6 +199,13 @@ public class ShaderTextWriter
             if (platformId == GPUPlatform.d3d11)
             {
                 var dx11SubPrograms = Dx11ShaderConverter.Convert(pass, blobMan, _engVer);
+
+                _sb.AppendLine("CGPROGRAM");
+                _sb.AppendLine("#pragma vertex vert");
+                _sb.AppendLine("#pragma fragment frag");
+                _sb.AppendLine("#include \"UnityCG.cginc\"");
+                _sb.AppendLine("");
+
                 foreach (var subProg in dx11SubPrograms)
                 {
                     WriteParams(subProg.Parameters);
@@ -210,6 +217,8 @@ public class ShaderTextWriter
                     _sb.AppendNoIndent(hlslConv.WriteFunction());
                     _sb.AppendLine("");
                 }
+
+                _sb.AppendLine("ENDCG");
             }
             else if (platformId == GPUPlatform.Switch)
             {
