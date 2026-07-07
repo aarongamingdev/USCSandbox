@@ -37,6 +37,7 @@ public class SerializedShader
 
         Platforms = shaderBf["platforms.Array"]
             .Select(i => (GPUPlatform)i.AsInt).ToList();
+        Console.WriteLine($"[DEBUG] Platforms in this shader: {string.Join(", ", Platforms)}");
 
         Offsets = SerializedMetadataHelpers.GetArrayFirstValue(shaderBf["offsets.Array"])
             .Select(o => o.AsUInt).ToList();
