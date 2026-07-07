@@ -1,4 +1,4 @@
-﻿using AssetsTools.NET;
+using AssetsTools.NET;
 
 namespace USCSandbox.Metadata;
 public class SerializedShaderState
@@ -37,7 +37,7 @@ public class SerializedShaderState
             RtBlendState = new List<SerializedShaderRTBlendState>(8);
             for (int i = 0; i < 8; i++)
             {
-                RtBlendState[i] = new SerializedShaderRTBlendState(field["rtBlend" + i]);
+                RtBlendState.Add(new SerializedShaderRTBlendState(field["rtBlend" + i]));
             }
         }
         else
