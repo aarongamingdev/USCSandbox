@@ -1,4 +1,4 @@
-﻿using AssetsTools.NET;
+using AssetsTools.NET;
 using AssetsTools.NET.Extra.Decompressors.LZ4;
 using USCSandbox.Common;
 using USCSandbox.Processor;
@@ -15,10 +15,12 @@ public class SerializedShader
     public string FallbackName;
     public List<string> KeywordNames;
     public List<GPUPlatform> Platforms;
-    public List<uint> Offsets;
-    public List<(uint, uint)> CompDecompLengths;
     public byte[] CompressedBlob;
     public List<SerializedSubShader> SubShaders;
+
+    private readonly AssetTypeValueField _offsetsField;
+    private readonly AssetTypeValueField _compressedLengthsField;
+    private readonly AssetTypeValueField _decompressedLengthsField;
 
     // not parsing this here for now since it'll only
     // be used once during shader file write time
@@ -37,18 +39,10 @@ public class SerializedShader
 
         Platforms = shaderBf["platforms.Array"]
             .Select(i => (GPUPlatform)i.AsInt).ToList();
-        Console.WriteLine($"[DEBUG] Platforms in this shader: {string.Join(", ", Platforms)}");
 
-        Offsets = SerializedMetadataHelpers.GetArrayFirstValue(shaderBf["offsets.Array"])
-            .Select(o => o.AsUInt).ToList();
-
-        var compressedLengths = SerializedMetadataHelpers.GetArrayFirstValue(shaderBf["compressedLengths.Array"]);
-        var decompressedLengths = SerializedMetadataHelpers.GetArrayFirstValue(shaderBf["decompressedLengths.Array"]);
-        CompDecompLengths = compressedLengths.Zip(decompressedLengths)
-            .Select(p => (
-                p.First.AsUInt,
-                p.Second.AsUInt
-            )).ToList();
+        _offsetsField = shaderBf["offsets.Array"];
+        _compressedLengthsField = shaderBf["compressedLengths.Array"];
+        _decompressedLengthsField = shaderBf["decompressedLengths.Array"];
 
         CompressedBlob = shaderBf["compressedBlob.Array"].AsByteArray;
 
@@ -62,13 +56,20 @@ public class SerializedShader
         if (platformIndex == -1)
             return null;
 
+        var offsets = SerializedMetadataHelpers.GetArrayValueForPlatform(_offsetsField, platformIndex)
+            .Select(o => o.AsUInt).ToList();
+        var compressedLengths = SerializedMetadataHelpers.GetArrayValueForPlatform(_compressedLengthsField, platformIndex);
+        var decompressedLengths = SerializedMetadataHelpers.GetArrayValueForPlatform(_decompressedLengthsField, platformIndex);
+        var compDecompLengths = compressedLengths.Zip(decompressedLengths)
+            .Select(p => (p.First.AsUInt, p.Second.AsUInt)).ToList();
+
         var compStream = new MemoryStream(CompressedBlob);
 
-        var blobs = new byte[CompDecompLengths.Count][];
-        for (var i = 0; i < CompDecompLengths.Count; i++)
+        var blobs = new byte[compDecompLengths.Count][];
+        for (var i = 0; i < compDecompLengths.Count; i++)
         {
-            var offset = Offsets[i];
-            var (compressedLength, decompressedLength) = CompDecompLengths[i];
+            var offset = offsets[i];
+            var (compressedLength, decompressedLength) = compDecompLengths[i];
 
             var decompressedBlob = new byte[decompressedLength];
 
