@@ -1,4 +1,4 @@
-﻿using AssetsTools.NET;
+using AssetsTools.NET;
 
 namespace USCSandbox.Metadata;
 public static class SerializedMetadataHelpers
@@ -17,5 +17,22 @@ public static class SerializedMetadataHelpers
             return field;
 
         return field[field.Children.Count - 1]["Array"];
+    }
+
+    // Same "new version" nested-vector detection as GetArrayFirstValue, but for fields that are
+    // genuinely per-platform (offsets/compressedLengths/decompressedLengths on Shader), where picking
+    // "the last one" is wrong whenever the requested platform isn't the last platform in the shader's
+    // platform list. Selects the entry that actually corresponds to platformIndex.
+    public static AssetTypeValueField GetArrayValueForPlatform(AssetTypeValueField field, int platformIndex)
+    {
+        var tempField = field.TemplateField;
+        if (tempField.Children.Count < 2)
+            return field;
+
+        var possibleArrayType = tempField[1];
+        if (possibleArrayType.Type != "vector" || possibleArrayType.Name != "data")
+            return field;
+
+        return field[platformIndex]["Array"];
     }
 }
